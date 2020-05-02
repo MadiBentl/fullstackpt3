@@ -1,5 +1,4 @@
 const supertest = require('supertest')
-
 const mongoose = require('mongoose')
 const app = require('../app')
 const api = supertest(app)
@@ -67,6 +66,9 @@ test('a specific note can be viewed', async () => {
 
   const noteToView = notesAtStart[0]
   noteToView.date = noteToView.date.toJSON()
+
+  console.log(noteToView)
+
   const resultNote = await api
     .get(`/api/notes/${noteToView.id}`)
     .expect(200)
