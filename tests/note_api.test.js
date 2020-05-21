@@ -3,11 +3,22 @@ const mongoose = require('mongoose')
 const app = require('../app')
 const api = supertest(app)
 const testHelper = require('./test_helper')
+const bcrypt = require('bcrypt')
 
 const Note = require('../models/note.js')
-
+const User = require('../models/user.js')
+let token = ''
 
 beforeEach(async () => {
+  await User.deleteMany({})
+  const passwordHash = await bcrypt.hash('password', 10)
+  const user = new User({ username: 'HolyMonkey', name: 'His Holiness', passwordHash })
+
+  await api
+    .post('/api/users')
+    .send(user)
+
+  await user.save()
   await Note.deleteMany({})
 
   const noteObjects = testHelper.initialNotes.map(note => new Note(note))
@@ -23,14 +34,18 @@ test('notes are returned as json', async () => {
 })
 
 test('a valid note can be added', async () => {
+  const loggedIn = await api.post('/api/login').send({ username: 'HolyMonkey', password: 'password' })
+  token = loggedIn.body.token
+
   const newNote = {
     content: 'async/await simplifies making async calls',
-    important: true,
+    important: true
   }
 
   await api
     .post('/api/notes')
     .send(newNote)
+    .set('Authorization', `Bearer ${token}`)
     .expect(200)
     .expect('Content-Type', /application\/json/)
 
