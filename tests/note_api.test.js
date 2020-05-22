@@ -11,9 +11,11 @@ let token = ''
 
 beforeEach(async () => {
   await User.deleteMany({})
-  const passwordHash = await bcrypt.hash('password', 10)
+  const saltRounds = 10
+  const passwordHash = await bcrypt.hash('password', saltRounds)
+  console.log(passwordHash)
   const user = new User({ username: 'HolyMonkey', name: 'His Holiness', passwordHash })
-
+  console.log(user)
   await api
     .post('/api/users')
     .send(user)
@@ -35,7 +37,8 @@ test('notes are returned as json', async () => {
 
 test('a valid note can be added', async () => {
   const loggedIn = await api.post('/api/login').send({ username: 'HolyMonkey', password: 'password' })
-  token = loggedIn.body.token
+  console.log(loggedIn.body)
+  token = 'bearer ' + loggedIn.body.token
 
   const newNote = {
     content: 'async/await simplifies making async calls',
@@ -45,9 +48,9 @@ test('a valid note can be added', async () => {
   await api
     .post('/api/notes')
     .send(newNote)
-    .set('Authorization', `Bearer ${token}`)
+    .set('Authorization', token)
     .expect(200)
-    .expect('Content-Type', /application\/json/)
+  //  .expect('Content-Type', /application\/json/)
 
   const res = await testHelper.notesInDb()
   expect(res).toHaveLength(testHelper.initialNotes.length + 1)
